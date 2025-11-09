@@ -425,7 +425,7 @@
 
             <div id="delayControl">
                 <label>Vertraging:</label>
-                <input type="range" id="delaySlider" min="5" max="30" value="10" step="1">
+                <input type="range" id="delaySlider" min="5" max="20" value="10" step="1">
                 <span class="delay-value"><span id="delayValue">10</span>s</span>
             </div>
         </div>
@@ -476,6 +476,12 @@
             const val = parseInt(delaySlider.value);
             delayValue.textContent = val;
             maxFrames = val * 30;
+            
+            // Memory check: warn if delay might be too high
+            const estimatedMemoryMB = (canvas.width * canvas.height * 4 * maxFrames) / (1024 * 1024);
+            if (estimatedMemoryMB > 200) {
+                console.warn(`Estimated memory usage: ${Math.round(estimatedMemoryMB)}MB - may cause crashes`);
+            }
         }
 
         // Main button
@@ -583,8 +589,8 @@
             const constraints = {
                 video: { 
                     facingMode: currentFacingMode,
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
                     frameRate: { ideal: 30 }
                 },
                 audio: false
@@ -602,8 +608,10 @@
 
             await video.play();
 
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 720;
+            // Gebruik lagere resolutie voor beter geheugengebruik
+            const scale = 0.5; // 50% van video resolutie
+            canvas.width = (video.videoWidth || 1280) * scale;
+            canvas.height = (video.videoHeight || 720) * scale;
 
             frames = [];
         }
@@ -652,7 +660,14 @@
             }
 
             video.srcObject = null;
+            
+            // Aggressive memory cleanup
             frames = [];
+            
+            // Force garbage collection hint
+            if (window.gc) {
+                window.gc();
+            }
         }
 
         function captureLoop() {
@@ -688,7 +703,18 @@
 
             } catch (err) {
                 console.error('Capture error:', err);
-                showError('Opname fout: ' + err.message);
+                
+                // Check if it's a memory error
+                if (err.name === 'NS_ERROR_OUT_OF_MEMORY' || err.message.includes('memory')) {
+                    showError('Geheugen vol! Probeer een kortere vertraging.');
+                    // Clear some frames to free memory
+                    if (frames.length > 150) {
+                        frames = frames.slice(frames.length - 150);
+                    }
+                } else {
+                    showError('Opname fout: ' + err.message);
+                }
+                
                 stop();
             }
         }
