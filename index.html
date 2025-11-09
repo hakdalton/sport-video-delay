@@ -28,9 +28,15 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #000;
             color: #fff;
+            user-select: none;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
             display: flex;
             flex-direction: column;
-            user-select: none;
         }
 
         #videoContainer {
@@ -56,34 +62,137 @@
             pointer-events: none;
         }
 
-        #controls {
-            background: rgba(0, 0, 0, 0.95);
-            padding: 20px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom));
-            border-top: 1px solid #222;
+        /* Floating controls overlay */
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 10;
         }
 
-        .control-group {
-            margin-bottom: 15px;
-        }
-
-        .control-group:last-child {
-            margin-bottom: 0;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            margin-bottom: 8px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .slider-container {
+        /* Top bar with status */
+        #topBar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: env(safe-area-inset-top, 20px) 20px 20px 20px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
             display: flex;
-            gap: 15px;
+            justify-content: space-between;
+            align-items: flex-start;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        #topBar.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #statusBadge {
+            background: rgba(76, 175, 80, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            display: flex;
             align-items: center;
+            gap: 8px;
+        }
+
+        #statusBadge.buffering {
+            background: rgba(255, 152, 0, 0.9);
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Floating action buttons */
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: none;
+            cursor: pointer;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        #cameraSwitch {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            position: absolute;
+            top: calc(env(safe-area-inset-top, 20px) + 20px);
+            right: 20px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #cameraSwitch.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Bottom controls */
+        #bottomBar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 20px calc(env(safe-area-inset-bottom, 20px) + 20px) 20px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            pointer-events: auto;
+        }
+
+        /* Delay slider compact */
+        #delayControl {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        #delayControl.hidden {
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            overflow: hidden;
+        }
+
+        #delayControl label {
+            font-size: 13px;
+            color: #aaa;
+            min-width: 80px;
         }
 
         input[type="range"] {
@@ -92,209 +201,187 @@
             background: transparent;
             outline: none;
             -webkit-appearance: none;
-            margin: 0;
-            padding: 0;
         }
 
         input[type="range"]::-webkit-slider-runnable-track {
             width: 100%;
             height: 4px;
-            background: #333;
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 2px;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             background: #4CAF50;
             border-radius: 50%;
-            cursor: pointer;
-            margin-top: -12px;
+            margin-top: -10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
-        input[type="range"]::-moz-range-track {
-            width: 100%;
-            height: 4px;
-            background: #333;
-            border-radius: 2px;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 28px;
-            height: 28px;
-            background: #4CAF50;
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-
-        .value {
-            min-width: 50px;
+        .delay-value {
+            min-width: 45px;
             text-align: right;
             color: #4CAF50;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 16px;
         }
 
-        button {
+        /* Main action button */
+        #mainButton {
             width: 100%;
-            padding: 18px;
-            font-size: 18px;
-            font-weight: bold;
+            height: 56px;
+            border-radius: 28px;
             border: none;
-            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.1s;
-            -webkit-appearance: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
-        button:active {
+        #mainButton:active {
             transform: scale(0.98);
         }
 
-        #startBtn {
+        #mainButton.start {
             background: #4CAF50;
             color: white;
         }
 
-        .secondary-btn {
-            background: #333;
-            color: white;
-            padding: 14px;
-            font-size: 16px;
-        }
-
-        .secondary-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        #stopBtn {
+        #mainButton.stop {
             background: #f44336;
             color: white;
-            display: none;
         }
 
-        #status {
+        /* Welcome screen */
+        #welcome {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
-            padding: 12px;
-            background: rgba(76, 175, 80, 0.15);
-            border-radius: 8px;
+            opacity: 1;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        #welcome.hidden {
+            opacity: 0;
+        }
+
+        #welcome h1 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        #welcome p {
+            color: #666;
             font-size: 14px;
-            color: #4CAF50;
-            border: 1px solid rgba(76, 175, 80, 0.3);
         }
 
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: #222;
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #4CAF50;
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        #placeholder {
-            color: #444;
-            font-size: 16px;
+        /* Error message */
+        #errorMsg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(244, 67, 54, 0.95);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 12px;
+            max-width: 80%;
             text-align: center;
-            padding: 20px;
-        }
-
-        .error-msg {
-            background: rgba(244, 67, 54, 0.2);
-            border: 1px solid rgba(244, 67, 54, 0.4);
-            color: #f44336;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 13px;
+            font-size: 14px;
             display: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        .error-msg.show {
+        #errorMsg.show {
             display: block;
         }
 
-        #cameraSwitch {
+        /* Progress ring for buffer */
+        #progressRing {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            color: white;
-            font-size: 24px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
             display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            backdrop-filter: blur(10px);
         }
 
-        #cameraSwitch.show {
-            display: flex;
+        #progressRing.show {
+            display: block;
         }
 
-        #cameraSwitch:active {
-            transform: scale(0.9);
-            background: rgba(0, 0, 0, 0.9);
+        #progressRing circle {
+            fill: none;
+            stroke-width: 4;
+        }
+
+        #progressRing .bg {
+            stroke: rgba(255,255,255,0.1);
+        }
+
+        #progressRing .progress {
+            stroke: #4CAF50;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: center;
+            transition: stroke-dashoffset 0.3s;
         }
     </style>
 </head>
 <body>
-    <div id="videoContainer">
-        <canvas id="canvas"></canvas>
-        <video id="video" playsinline webkit-playsinline muted></video>
-        <div id="placeholder">Klaar om te starten<br><small style="color:#666;">Zorg dat Safari cameratoegang heeft</small></div>
-        <button id="cameraSwitch">🔄</button>
-    </div>
-    
-    <div id="controls">
-        <div class="error-msg" id="errorMsg"></div>
+    <div id="app">
+        <div id="videoContainer">
+            <canvas id="canvas"></canvas>
+            <video id="video" playsinline webkit-playsinline muted></video>
+            
+            <div id="welcome">
+                <h1>🎥 Sport Video Delay</h1>
+                <p>Stel de vertraging in en druk op start</p>
+            </div>
 
-        <div class="control-group hidden" id="statusGroup">
-            <div id="status">
-                <div id="statusText">Buffering...</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
+            <svg id="progressRing">
+                <circle class="bg" cx="40" cy="40" r="36"></circle>
+                <circle class="progress" cx="40" cy="40" r="36" 
+                    stroke-dasharray="226" stroke-dashoffset="226"></circle>
+            </svg>
+
+            <div id="errorMsg"></div>
+        </div>
+
+        <div id="overlay">
+            <div id="topBar">
+                <div id="statusBadge" class="buffering">
+                    <span class="pulse"></span>
+                    <span id="statusText">Buffering 0%</span>
                 </div>
             </div>
+
+            <button id="cameraSwitch" class="fab">🔄</button>
         </div>
 
-        <div class="control-group">
-            <label>Vertraging</label>
-            <div class="slider-container">
-                <input type="range" id="delay" min="5" max="30" value="10" step="1">
-                <span class="value"><span id="delayVal">10</span>s</span>
+        <div id="bottomBar">
+            <div id="delayControl">
+                <label>Vertraging:</label>
+                <input type="range" id="delaySlider" min="5" max="30" value="10" step="1">
+                <span class="delay-value"><span id="delayValue">10</span>s</span>
             </div>
-        </div>
 
-        <div class="control-group" id="cameraGroup">
-            <button id="switchCameraBtn" class="secondary-btn">🔄 Wissel Camera</button>
-            <div style="text-align: center; font-size: 11px; color: #666; margin-top: 5px;" id="cameraInfo">Detecteren...</div>
-        </div>
-
-        <div class="control-group">
-            <button id="startBtn">▶ START</button>
-            <button id="stopBtn">■ STOP</button>
+            <button id="mainButton" class="start">
+                <span>▶</span>
+                <span>Start</span>
+            </button>
         </div>
     </div>
 
@@ -302,26 +389,25 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: false });
-        const delaySlider = document.getElementById('delay');
-        const delayVal = document.getElementById('delayVal');
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const statusGroup = document.getElementById('statusGroup');
-        const statusText = document.getElementById('statusText');
-        const progressFill = document.getElementById('progressFill');
-        const placeholder = document.getElementById('placeholder');
-        const errorMsg = document.getElementById('errorMsg');
+        const delaySlider = document.getElementById('delaySlider');
+        const delayValue = document.getElementById('delayValue');
+        const mainButton = document.getElementById('mainButton');
         const cameraSwitch = document.getElementById('cameraSwitch');
-        const switchCameraBtn = document.getElementById('switchCameraBtn');
-        const cameraGroup = document.getElementById('cameraGroup');
-        const cameraInfo = document.getElementById('cameraInfo');
+        const welcome = document.getElementById('welcome');
+        const topBar = document.getElementById('topBar');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        const errorMsg = document.getElementById('errorMsg');
+        const delayControl = document.getElementById('delayControl');
+        const progressRing = document.getElementById('progressRing');
+        const progressCircle = progressRing.querySelector('.progress');
 
         let frames = [];
         let maxFrames = 300;
         let isRunning = false;
         let stream = null;
         let animationId = null;
-        let currentFacingMode = 'environment'; // 'environment' = back, 'user' = front
+        let currentFacingMode = 'environment';
 
         // Update delay
         delaySlider.addEventListener('input', updateDelay);
@@ -329,145 +415,102 @@
         
         function updateDelay() {
             const val = parseInt(delaySlider.value);
-            delayVal.textContent = val;
+            delayValue.textContent = val;
             maxFrames = val * 30;
         }
 
-        // Check if device has multiple cameras
-        async function checkCameras() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                
-                cameraInfo.textContent = `${videoDevices.length} camera('s) gevonden`;
-                
-                // Enable/disable button based on camera count
-                if (videoDevices.length > 1) {
-                    switchCameraBtn.disabled = false;
-                    cameraInfo.style.color = '#4CAF50';
-                } else {
-                    switchCameraBtn.disabled = true;
-                    cameraInfo.style.color = '#666';
-                    cameraInfo.textContent = 'Alleen 1 camera beschikbaar';
-                }
-            } catch (err) {
-                console.log('Could not enumerate devices:', err);
-                cameraInfo.textContent = 'Kan camera\'s niet detecteren';
-                switchCameraBtn.disabled = true;
-            }
-        }
-
-        // Check cameras on load
-        checkCameras();
-
-        // Camera switch button (floating button)
-        cameraSwitch.addEventListener('click', async () => {
-            if (!isRunning) return;
-
-            // Toggle facing mode
-            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-            
-            // Restart with new camera
-            const wasRunning = isRunning;
-            await stopCamera();
-            
-            if (wasRunning) {
-                await startCamera();
+        // Main button
+        mainButton.addEventListener('click', () => {
+            if (isRunning) {
+                stop();
+            } else {
+                start();
             }
         });
 
-        // Switch camera button (in controls)
-        if (switchCameraBtn) {
-            switchCameraBtn.addEventListener('click', async () => {
-                if (!isRunning) return;
+        // Camera switch
+        cameraSwitch.addEventListener('click', async () => {
+            if (!isRunning) return;
+            
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            
+            // Restart
+            await stopCamera();
+            await startCamera();
+        });
 
-                // Toggle facing mode
-                currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-                
-                // Restart with new camera
-                const wasRunning = isRunning;
-                await stopCamera();
-                
-                if (wasRunning) {
-                    await startCamera();
-                }
-            });
-        }
-
-        // Show error
-        function showError(msg) {
-            errorMsg.textContent = msg;
-            errorMsg.classList.add('show');
-            setTimeout(() => errorMsg.classList.remove('show'), 5000);
-        }
-
-        async function startCamera() {
+        async function start() {
             try {
-                const constraints = {
-                    video: { 
-                        facingMode: currentFacingMode,
-                        width: { ideal: 1280, max: 1920 },
-                        height: { ideal: 720, max: 1080 },
-                        frameRate: { ideal: 30, max: 30 }
-                    },
-                    audio: false
-                };
-
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-                video.srcObject = stream;
-                video.setAttribute('playsinline', '');
-                video.setAttribute('webkit-playsinline', '');
+                await startCamera();
                 
-                // Wait for video to be ready
-                await new Promise((resolve, reject) => {
-                    video.onloadedmetadata = resolve;
-                    video.onerror = reject;
-                    setTimeout(reject, 5000);
-                });
-
-                await video.play();
-
-                // Set canvas size
-                const width = video.videoWidth || 1280;
-                const height = video.videoHeight || 720;
-                canvas.width = width;
-                canvas.height = height;
-
-                // Start capture
-                frames = [];
+                // UI updates
                 isRunning = true;
-                
-                placeholder.classList.add('hidden');
-                statusGroup.classList.remove('hidden');
+                welcome.classList.add('hidden');
+                topBar.classList.add('show');
                 cameraSwitch.classList.add('show');
-                startBtn.style.display = 'none';
-                stopBtn.style.display = 'block';
-                delaySlider.disabled = true;
+                delayControl.classList.add('hidden');
+                mainButton.classList.remove('start');
+                mainButton.classList.add('stop');
+                mainButton.innerHTML = '<span>■</span><span>Stop</span>';
+                progressRing.classList.add('show');
 
                 captureLoop();
 
             } catch (err) {
                 console.error('Camera error:', err);
-                
-                let msg = 'Camera fout: ';
-                if (err.name === 'NotAllowedError') {
-                    msg += 'Geen toestemming. Ga naar Instellingen > Safari > Camera';
-                } else if (err.name === 'NotFoundError') {
-                    msg += 'Geen camera gevonden';
-                } else if (err.name === 'NotReadableError') {
-                    msg += 'Camera in gebruik door andere app';
-                } else {
-                    msg += err.message;
-                }
-                
-                showError(msg);
+                showError(getErrorMessage(err));
             }
         }
 
-        async function stopCamera() {
-            isRunning = false;
+        async function startCamera() {
+            const constraints = {
+                video: { 
+                    facingMode: currentFacingMode,
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    frameRate: { ideal: 30 }
+                },
+                audio: false
+            };
+
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            video.setAttribute('playsinline', '');
             
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = resolve;
+                video.onerror = reject;
+                setTimeout(reject, 5000);
+            });
+
+            await video.play();
+
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+
+            frames = [];
+        }
+
+        function stop() {
+            stopCamera();
+            
+            isRunning = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            welcome.classList.remove('hidden');
+            topBar.classList.remove('show');
+            cameraSwitch.classList.remove('show');
+            delayControl.classList.remove('hidden');
+            mainButton.classList.remove('stop');
+            mainButton.classList.add('start');
+            mainButton.innerHTML = '<span>▶</span><span>Start</span>';
+            progressRing.classList.remove('show');
+            
+            statusBadge.classList.add('buffering');
+            statusText.textContent = 'Buffering 0%';
+        }
+
+        function stopCamera() {
             if (animationId) {
                 cancelAnimationFrame(animationId);
                 animationId = null;
@@ -482,60 +525,33 @@
             frames = [];
         }
 
-        // Start
-        startBtn.addEventListener('click', async () => {
-            await startCamera();
-        });
-
-        // Stop
-        stopBtn.addEventListener('click', () => {
-            stop();
-        });
-
-        function stop() {
-            stopCamera();
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            placeholder.classList.remove('hidden');
-            statusGroup.classList.add('hidden');
-            cameraSwitch.classList.remove('show');
-            startBtn.style.display = 'block';
-            stopBtn.style.display = 'none';
-            delaySlider.disabled = false;
-            progressFill.style.width = '0%';
-        }
-
         function captureLoop() {
             if (!isRunning) return;
 
             try {
-                // Capture frame
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 
                 frames.push(frame);
 
-                // Limit buffer
                 if (frames.length > maxFrames) {
                     frames.shift();
                 }
 
-                // Update UI
                 const progress = Math.min(100, (frames.length / maxFrames) * 100);
-                progressFill.style.width = progress + '%';
+                updateProgress(progress);
 
                 if (frames.length >= maxFrames) {
-                    statusText.textContent = '▶ Live - Vertraagd ' + delaySlider.value + 's';
-                    // Display delayed frame
+                    statusBadge.classList.remove('buffering');
+                    statusText.textContent = `Live ${delaySlider.value}s`;
+                    progressRing.classList.remove('show');
                     ctx.putImageData(frames[0], 0, 0);
                 } else {
-                    statusText.textContent = 'Buffering ' + Math.round(progress) + '%';
-                    // Show current frame
+                    statusBadge.classList.add('buffering');
+                    statusText.textContent = `Buffering ${Math.round(progress)}%`;
                     ctx.putImageData(frame, 0, 0);
                 }
 
-                // Continue at 30fps
                 setTimeout(() => {
                     animationId = requestAnimationFrame(captureLoop);
                 }, 1000 / 30);
@@ -547,15 +563,41 @@
             }
         }
 
+        function updateProgress(percent) {
+            const circumference = 226;
+            const offset = circumference - (percent / 100) * circumference;
+            progressCircle.style.strokeDashoffset = offset;
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+            setTimeout(() => errorMsg.classList.remove('show'), 5000);
+        }
+
+        function getErrorMessage(err) {
+            let msg = 'Camera fout: ';
+            if (err.name === 'NotAllowedError') {
+                msg += 'Geen toestemming. Ga naar Instellingen > Safari > Camera';
+            } else if (err.name === 'NotFoundError') {
+                msg += 'Geen camera gevonden';
+            } else if (err.name === 'NotReadableError') {
+                msg += 'Camera in gebruik door andere app';
+            } else {
+                msg += err.message;
+            }
+            return msg;
+        }
+
+        // Prevent iOS scroll on video area
+        document.getElementById('videoContainer').addEventListener('touchmove', (e) => {
+            if (isRunning) e.preventDefault();
+        }, { passive: false });
+
         // Cleanup
         window.addEventListener('beforeunload', () => {
             stop();
         });
-
-        // Prevent iOS scroll on video area only
-        document.getElementById('videoContainer').addEventListener('touchmove', (e) => {
-            e.preventDefault();
-        }, { passive: false });
     </script>
 </body>
 </html>
