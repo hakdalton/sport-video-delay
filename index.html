@@ -160,6 +160,13 @@
             color: white;
         }
 
+        .secondary-btn {
+            background: #333;
+            color: white;
+            padding: 14px;
+            font-size: 16px;
+        }
+
         #stopBtn {
             background: #f44336;
             color: white;
@@ -246,6 +253,10 @@
             </div>
         </div>
 
+        <div class="control-group" id="cameraGroup" style="display: none;">
+            <button id="switchCameraBtn" class="secondary-btn">🔄 Wissel Camera</button>
+        </div>
+
         <div class="control-group">
             <button id="startBtn">▶ START</button>
             <button id="stopBtn">■ STOP</button>
@@ -265,12 +276,15 @@
         const progressFill = document.getElementById('progressFill');
         const placeholder = document.getElementById('placeholder');
         const errorMsg = document.getElementById('errorMsg');
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const cameraGroup = document.getElementById('cameraGroup');
 
         let frames = [];
         let maxFrames = 300;
         let isRunning = false;
         let stream = null;
         let animationId = null;
+        let currentFacingMode = 'environment'; // 'environment' = back, 'user' = front
 
         // Update delay
         delaySlider.addEventListener('input', updateDelay);
@@ -282,6 +296,40 @@
             maxFrames = val * 30;
         }
 
+        // Check if device has multiple cameras
+        async function checkCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                // Show switch button if multiple cameras found
+                if (videoDevices.length > 1) {
+                    cameraGroup.style.display = 'block';
+                }
+            } catch (err) {
+                console.log('Could not enumerate devices:', err);
+            }
+        }
+
+        // Check cameras on load
+        checkCameras();
+
+        // Switch camera button
+        switchCameraBtn.addEventListener('click', async () => {
+            if (!isRunning) return;
+
+            // Toggle facing mode
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            
+            // Restart with new camera
+            const wasRunning = isRunning;
+            await stopCamera();
+            
+            if (wasRunning) {
+                await startCamera();
+            }
+        });
+
         // Show error
         function showError(msg) {
             errorMsg.textContent = msg;
@@ -289,13 +337,11 @@
             setTimeout(() => errorMsg.classList.remove('show'), 5000);
         }
 
-        // Start
-        startBtn.addEventListener('click', async () => {
+        async function startCamera() {
             try {
-                // iOS Safari requires specific constraints
                 const constraints = {
                     video: { 
-                        facingMode: 'environment',
+                        facingMode: currentFacingMode,
                         width: { ideal: 1280, max: 1920 },
                         height: { ideal: 720, max: 1080 },
                         frameRate: { ideal: 30, max: 30 }
@@ -313,7 +359,7 @@
                 await new Promise((resolve, reject) => {
                     video.onloadedmetadata = resolve;
                     video.onerror = reject;
-                    setTimeout(reject, 5000); // 5s timeout
+                    setTimeout(reject, 5000);
                 });
 
                 await video.play();
@@ -352,14 +398,9 @@
                 
                 showError(msg);
             }
-        });
+        }
 
-        // Stop
-        stopBtn.addEventListener('click', () => {
-            stop();
-        });
-
-        function stop() {
+        async function stopCamera() {
             isRunning = false;
             
             if (animationId) {
@@ -374,6 +415,21 @@
 
             video.srcObject = null;
             frames = [];
+        }
+
+        // Start
+        startBtn.addEventListener('click', async () => {
+            await startCamera();
+        });
+
+        // Stop
+        stopBtn.addEventListener('click', () => {
+            stop();
+        });
+
+        function stop() {
+            stopCamera();
+            
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             placeholder.classList.remove('hidden');
