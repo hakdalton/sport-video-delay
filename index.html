@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Video Delay">
+    <meta name="theme-color" content="#000000">
+    <title>Sport Video Delay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        #videoContainer {
+            flex: 1;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        video {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #controls {
+            background: rgba(0, 0, 0, 0.95);
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            border-top: 1px solid #222;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slider-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .value {
+            min-width: 50px;
+            text-align: right;
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            -webkit-appearance: none;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #startBtn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        #stopBtn {
+            background: #f44336;
+            color: white;
+            display: none;
+        }
+
+        #status {
+            text-align: center;
+            padding: 12px;
+            background: rgba(76, 175, 80, 0.15);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #placeholder {
+            color: #444;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error-msg {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.4);
+            color: #f44336;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="videoContainer">
+        <canvas id="canvas"></canvas>
+        <video id="video" playsinline webkit-playsinline muted></video>
+        <div id="placeholder">Klaar om te starten<br><small style="color:#666;">Zorg dat Safari cameratoegang heeft</small></div>
+    </div>
+    
+    <div id="controls">
+        <div class="error-msg" id="errorMsg"></div>
+
+        <div class="control-group hidden" id="statusGroup">
+            <div id="status">
+                <div id="statusText">Buffering...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Vertraging</label>
+            <div class="slider-container">
+                <input type="range" id="delay" min="5" max="30" value="10" step="1">
+                <span class="value"><span id="delayVal">10</span>s</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <button id="startBtn">▶ START</button>
+            <button id="stopBtn">■ STOP</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: false });
+        const delaySlider = document.getElementById('delay');
+        const delayVal = document.getElementById('delayVal');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusGroup = document.getElementById('statusGroup');
+        const statusText = document.getElementById('statusText');
+        const progressFill = document.getElementById('progressFill');
+        const placeholder = document.getElementById('placeholder');
+        const errorMsg = document.getElementById('errorMsg');
+
+        let frames = [];
+        let maxFrames = 300;
+        let isRunning = false;
+        let stream = null;
+        let animationId = null;
+
+        // Update delay
+        delaySlider.addEventListener('input', () => {
+            const val = parseInt(delaySlider.value);
+            delayVal.textContent = val;
+            maxFrames = val * 30;
+        });
+
+        // Show error
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+            setTimeout(() => errorMsg.classList.remove('show'), 5000);
+        }
+
+        // Start
+        startBtn.addEventListener('click', async () => {
+            try {
+                // iOS Safari requires specific constraints
+                const constraints = {
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 },
+                        frameRate: { ideal: 30, max: 30 }
+                    },
+                    audio: false
+                };
+
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                video.srcObject = stream;
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                
+                // Wait for video to be ready
+                await new Promise((resolve, reject) => {
+                    video.onloadedmetadata = resolve;
+                    video.onerror = reject;
+                    setTimeout(reject, 5000); // 5s timeout
+                });
+
+                await video.play();
+
+                // Set canvas size
+                const width = video.videoWidth || 1280;
+                const height = video.videoHeight || 720;
+                canvas.width = width;
+                canvas.height = height;
+
+                // Start capture
+                frames = [];
+                isRunning = true;
+                
+                placeholder.classList.add('hidden');
+                statusGroup.classList.remove('hidden');
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                delaySlider.disabled = true;
+
+                captureLoop();
+
+            } catch (err) {
+                console.error('Camera error:', err);
+                
+                let msg = 'Camera fout: ';
+                if (err.name === 'NotAllowedError') {
+                    msg += 'Geen toestemming. Ga naar Instellingen > Safari > Camera';
+                } else if (err.name === 'NotFoundError') {
+                    msg += 'Geen camera gevonden';
+                } else if (err.name === 'NotReadableError') {
+                    msg += 'Camera in gebruik door andere app';
+                } else {
+                    msg += err.message;
+                }
+                
+                showError(msg);
+            }
+        });
+
+        // Stop
+        stopBtn.addEventListener('click', () => {
+            stop();
+        });
+
+        function stop() {
+            isRunning = false;
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+
+            video.srcObject = null;
+            frames = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            placeholder.classList.remove('hidden');
+            statusGroup.classList.add('hidden');
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            delaySlider.disabled = false;
+            progressFill.style.width = '0%';
+        }
+
+        function captureLoop() {
+            if (!isRunning) return;
+
+            try {
+                // Capture frame
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                frames.push(frame);
+
+                // Limit buffer
+                if (frames.length > maxFrames) {
+                    frames.shift();
+                }
+
+                // Update UI
+                const progress = Math.min(100, (frames.length / maxFrames) * 100);
+                progressFill.style.width = progress + '%';
+
+                if (frames.length >= maxFrames) {
+                    statusText.textContent = '▶ Live - Vertraagd ' + delaySlider.value + 's';
+                    // Display delayed frame
+                    ctx.putImageData(frames[0], 0, 0);
+                } else {
+                    statusText.textContent = 'Buffering ' + Math.round(progress) + '%';
+                    // Show current frame
+                    ctx.putImageData(frame, 0, 0);
+                }
+
+                // Continue at 30fps
+                setTimeout(() => {
+                    animationId = requestAnimationFrame(captureLoop);
+                }, 1000 / 30);
+
+            } catch (err) {
+                console.error('Capture error:', err);
+                showError('Opname fout: ' + err.message);
+                stop();
+            }
+        }
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            stop();
+        });
+
+        // Prevent iOS scroll
+        document.body.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
