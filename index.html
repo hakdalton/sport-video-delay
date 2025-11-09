@@ -153,7 +153,17 @@
             pointer-events: none;
         }
 
-        #cameraSwitch.show {
+        #fullscreenBtn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            position: absolute;
+            top: 150px;
+            right: 88px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #fullscreenBtn.show, #cameraSwitch.show {
             opacity: 1;
             pointer-events: auto;
         }
@@ -373,6 +383,7 @@
                 </div>
             </div>
 
+            <button id="fullscreenBtn" class="fab">⛶</button>
             <button id="cameraSwitch" class="fab">🔄</button>
         </div>
 
@@ -398,6 +409,7 @@
         const delayValue = document.getElementById('delayValue');
         const mainButton = document.getElementById('mainButton');
         const cameraSwitch = document.getElementById('cameraSwitch');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
         const welcome = document.getElementById('welcome');
         const topBar = document.getElementById('topBar');
         const statusBadge = document.getElementById('statusBadge');
@@ -406,6 +418,9 @@
         const delayControl = document.getElementById('delayControl');
         const progressRing = document.getElementById('progressRing');
         const progressCircle = progressRing.querySelector('.progress');
+        const videoContainer = document.getElementById('videoContainer');
+        const bottomBar = document.getElementById('bottomBar');
+        const overlay = document.getElementById('overlay');
 
         let frames = [];
         let maxFrames = 300;
@@ -413,6 +428,7 @@
         let stream = null;
         let animationId = null;
         let currentFacingMode = 'environment';
+        let isFullscreen = false;
 
         // Update delay
         delaySlider.addEventListener('input', updateDelay);
@@ -444,6 +460,63 @@
             await startCamera();
         });
 
+        // Fullscreen toggle
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+        // Tap video to exit fullscreen
+        videoContainer.addEventListener('click', (e) => {
+            if (isFullscreen && isRunning && e.target === canvas) {
+                toggleFullscreen();
+            }
+        });
+
+        function toggleFullscreen() {
+            if (!isRunning) return;
+
+            isFullscreen = !isFullscreen;
+
+            if (isFullscreen) {
+                // Enter fullscreen mode
+                bottomBar.style.opacity = '0';
+                bottomBar.style.pointerEvents = 'none';
+                topBar.style.opacity = '0';
+                fullscreenBtn.style.opacity = '0';
+                cameraSwitch.style.opacity = '0';
+                fullscreenBtn.innerHTML = '⛶';
+                
+                // Request native fullscreen if available
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                }
+            } else {
+                // Exit fullscreen mode
+                bottomBar.style.opacity = '1';
+                bottomBar.style.pointerEvents = 'auto';
+                topBar.style.opacity = '1';
+                fullscreenBtn.style.opacity = '1';
+                cameraSwitch.style.opacity = '1';
+                fullscreenBtn.innerHTML = '⛶';
+
+                // Exit native fullscreen if active
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            }
+        }
+
+        // Handle native fullscreen change
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isFullscreen && isRunning) {
+                // User exited fullscreen via system gesture
+                isFullscreen = false;
+                bottomBar.style.opacity = '1';
+                bottomBar.style.pointerEvents = 'auto';
+                topBar.style.opacity = '1';
+                fullscreenBtn.style.opacity = '1';
+                cameraSwitch.style.opacity = '1';
+            }
+        });
+
         async function start() {
             try {
                 await startCamera();
@@ -453,6 +526,7 @@
                 welcome.classList.add('hidden');
                 topBar.classList.add('show');
                 cameraSwitch.classList.add('show');
+                fullscreenBtn.classList.add('show');
                 delayControl.classList.add('hidden');
                 mainButton.classList.remove('start');
                 mainButton.classList.add('stop');
@@ -499,17 +573,30 @@
         function stop() {
             stopCamera();
             
+            // Exit fullscreen if active
+            if (isFullscreen) {
+                isFullscreen = false;
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            }
+            
             isRunning = false;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             welcome.classList.remove('hidden');
             topBar.classList.remove('show');
             cameraSwitch.classList.remove('show');
+            fullscreenBtn.classList.remove('show');
             delayControl.classList.remove('hidden');
             mainButton.classList.remove('stop');
             mainButton.classList.add('start');
             mainButton.innerHTML = '<span>▶</span><span>Start</span>';
             progressRing.classList.remove('show');
+            
+            // Reset opacity
+            bottomBar.style.opacity = '1';
+            bottomBar.style.pointerEvents = 'auto';
             
             statusBadge.classList.add('buffering');
             statusText.textContent = 'Buffering 0%';
