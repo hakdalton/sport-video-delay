@@ -167,6 +167,11 @@
             font-size: 16px;
         }
 
+        .secondary-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         #stopBtn {
             background: #f44336;
             color: white;
@@ -253,8 +258,9 @@
             </div>
         </div>
 
-        <div class="control-group" id="cameraGroup" style="display: none;">
+        <div class="control-group" id="cameraGroup">
             <button id="switchCameraBtn" class="secondary-btn">🔄 Wissel Camera</button>
+            <div style="text-align: center; font-size: 11px; color: #666; margin-top: 5px;" id="cameraInfo">Detecteren...</div>
         </div>
 
         <div class="control-group">
@@ -278,6 +284,7 @@
         const errorMsg = document.getElementById('errorMsg');
         const switchCameraBtn = document.getElementById('switchCameraBtn');
         const cameraGroup = document.getElementById('cameraGroup');
+        const cameraInfo = document.getElementById('cameraInfo');
 
         let frames = [];
         let maxFrames = 300;
@@ -302,12 +309,21 @@
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
                 
-                // Show switch button if multiple cameras found
+                cameraInfo.textContent = `${videoDevices.length} camera('s) gevonden`;
+                
+                // Enable/disable button based on camera count
                 if (videoDevices.length > 1) {
-                    cameraGroup.style.display = 'block';
+                    switchCameraBtn.disabled = false;
+                    cameraInfo.style.color = '#4CAF50';
+                } else {
+                    switchCameraBtn.disabled = true;
+                    cameraInfo.style.color = '#666';
+                    cameraInfo.textContent = 'Alleen 1 camera beschikbaar';
                 }
             } catch (err) {
                 console.log('Could not enumerate devices:', err);
+                cameraInfo.textContent = 'Kan camera\'s niet detecteren';
+                switchCameraBtn.disabled = true;
             }
         }
 
