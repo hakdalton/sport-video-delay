@@ -73,14 +73,13 @@
             z-index: 10;
         }
 
-        /* Top bar with status */
+        /* Top bar with status - now lower */
         #topBar {
             position: absolute;
-            top: 0;
+            top: 150px;
             left: 0;
             right: 0;
-            padding: env(safe-area-inset-top, 20px) 20px 20px 20px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -148,7 +147,7 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
             position: absolute;
-            top: calc(env(safe-area-inset-top, 20px) + 20px);
+            top: 150px;
             right: 20px;
             opacity: 0;
             pointer-events: none;
@@ -159,18 +158,19 @@
             pointer-events: auto;
         }
 
-        /* Bottom controls */
+        /* Top controls */
         #bottomBar {
             position: absolute;
-            bottom: 0;
+            top: 0;
             left: 0;
             right: 0;
-            padding: 20px 20px calc(env(safe-area-inset-bottom, 20px) + 20px) 20px;
-            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            padding: calc(env(safe-area-inset-top, 20px) + 20px) 20px 20px 20px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
             display: flex;
             flex-direction: column;
             gap: 20px;
             pointer-events: auto;
+            z-index: 100;
         }
 
         /* Delay slider compact */
@@ -242,20 +242,25 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            -webkit-appearance: none;
         }
 
         #mainButton:active {
             transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
 
         #mainButton.start {
             background: #4CAF50;
             color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         #mainButton.stop {
             background: #f44336;
             color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         /* Welcome screen */
@@ -372,16 +377,16 @@
         </div>
 
         <div id="bottomBar">
+            <button id="mainButton" class="start">
+                <span>▶</span>
+                <span>Start</span>
+            </button>
+
             <div id="delayControl">
                 <label>Vertraging:</label>
                 <input type="range" id="delaySlider" min="5" max="30" value="10" step="1">
                 <span class="delay-value"><span id="delayValue">10</span>s</span>
             </div>
-
-            <button id="mainButton" class="start">
-                <span>▶</span>
-                <span>Start</span>
-            </button>
         </div>
     </div>
 
