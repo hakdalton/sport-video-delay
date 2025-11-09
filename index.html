@@ -88,20 +88,47 @@
 
         input[type="range"] {
             flex: 1;
+            height: 40px;
+            background: transparent;
+            outline: none;
+            -webkit-appearance: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
             height: 4px;
             background: #333;
             border-radius: 2px;
-            outline: none;
-            -webkit-appearance: none;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             background: #4CAF50;
             border-radius: 50%;
             cursor: pointer;
+            margin-top: -12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .value {
@@ -246,11 +273,14 @@
         let animationId = null;
 
         // Update delay
-        delaySlider.addEventListener('input', () => {
+        delaySlider.addEventListener('input', updateDelay);
+        delaySlider.addEventListener('change', updateDelay);
+        
+        function updateDelay() {
             const val = parseInt(delaySlider.value);
             delayVal.textContent = val;
             maxFrames = val * 30;
-        });
+        }
 
         // Show error
         function showError(msg) {
@@ -400,8 +430,8 @@
             stop();
         });
 
-        // Prevent iOS scroll
-        document.body.addEventListener('touchmove', (e) => {
+        // Prevent iOS scroll on video area only
+        document.getElementById('videoContainer').addEventListener('touchmove', (e) => {
             e.preventDefault();
         }, { passive: false });
     </script>
