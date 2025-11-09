@@ -229,6 +229,34 @@
         .error-msg.show {
             display: block;
         }
+
+        #cameraSwitch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        #cameraSwitch.show {
+            display: flex;
+        }
+
+        #cameraSwitch:active {
+            transform: scale(0.9);
+            background: rgba(0, 0, 0, 0.9);
+        }
     </style>
 </head>
 <body>
@@ -236,6 +264,7 @@
         <canvas id="canvas"></canvas>
         <video id="video" playsinline webkit-playsinline muted></video>
         <div id="placeholder">Klaar om te starten<br><small style="color:#666;">Zorg dat Safari cameratoegang heeft</small></div>
+        <button id="cameraSwitch">🔄</button>
     </div>
     
     <div id="controls">
@@ -282,6 +311,7 @@
         const progressFill = document.getElementById('progressFill');
         const placeholder = document.getElementById('placeholder');
         const errorMsg = document.getElementById('errorMsg');
+        const cameraSwitch = document.getElementById('cameraSwitch');
         const switchCameraBtn = document.getElementById('switchCameraBtn');
         const cameraGroup = document.getElementById('cameraGroup');
         const cameraInfo = document.getElementById('cameraInfo');
@@ -330,8 +360,8 @@
         // Check cameras on load
         checkCameras();
 
-        // Switch camera button
-        switchCameraBtn.addEventListener('click', async () => {
+        // Camera switch button (floating button)
+        cameraSwitch.addEventListener('click', async () => {
             if (!isRunning) return;
 
             // Toggle facing mode
@@ -345,6 +375,24 @@
                 await startCamera();
             }
         });
+
+        // Switch camera button (in controls)
+        if (switchCameraBtn) {
+            switchCameraBtn.addEventListener('click', async () => {
+                if (!isRunning) return;
+
+                // Toggle facing mode
+                currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+                
+                // Restart with new camera
+                const wasRunning = isRunning;
+                await stopCamera();
+                
+                if (wasRunning) {
+                    await startCamera();
+                }
+            });
+        }
 
         // Show error
         function showError(msg) {
@@ -392,6 +440,7 @@
                 
                 placeholder.classList.add('hidden');
                 statusGroup.classList.remove('hidden');
+                cameraSwitch.classList.add('show');
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'block';
                 delaySlider.disabled = true;
@@ -450,6 +499,7 @@
             
             placeholder.classList.remove('hidden');
             statusGroup.classList.add('hidden');
+            cameraSwitch.classList.remove('show');
             startBtn.style.display = 'block';
             stopBtn.style.display = 'none';
             delaySlider.disabled = false;
