@@ -7,6 +7,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Video Delay">
     <meta name="theme-color" content="#000000">
+    
+    <!-- iOS Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%234CAF50'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='80' fill='white'>🎥</text></svg>">
+    
     <title>Sport Video Delay</title>
     <style>
         * {
@@ -283,6 +287,7 @@
             opacity: 1;
             transition: opacity 0.3s;
             pointer-events: none;
+            max-width: 90%;
         }
 
         #welcome.hidden {
@@ -298,6 +303,26 @@
         #welcome p {
             color: #666;
             font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        #installTip {
+            background: rgba(33, 150, 243, 0.15);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #64B5F6;
+            line-height: 1.5;
+            margin-top: 20px;
+        }
+
+        #installTip.hidden {
+            display: none;
+        }
+
+        #installTip strong {
+            color: #2196F3;
         }
 
         /* Error message */
@@ -364,6 +389,11 @@
             <div id="welcome">
                 <h1>🎥 Sport Video Delay</h1>
                 <p>Stel de vertraging in en druk op start</p>
+                <div id="installTip">
+                    <strong>💡 Tip voor volledig scherm:</strong><br>
+                    Tik op <strong>delen</strong> (⬆️) → <strong>Zet op beginscherm</strong><br>
+                    Open dan de app vanaf je beginscherm voor het beste resultaat!
+                </div>
             </div>
 
             <svg id="progressRing">
@@ -429,6 +459,14 @@
         let animationId = null;
         let currentFacingMode = 'environment';
         let isFullscreen = false;
+
+        // Check if running as standalone app (added to home screen)
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+        const installTip = document.getElementById('installTip');
+        
+        if (isStandalone) {
+            installTip.classList.add('hidden');
+        }
 
         // Update delay
         delaySlider.addEventListener('input', updateDelay);
